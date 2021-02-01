@@ -1,0 +1,4 @@
+192.168.233.104,       pi,     raspberry
+192.168.233.105,    pi, raspberry
+192.168.233.106,     pi,     raspberry
+192.168.233.107,    pi,     raspberry

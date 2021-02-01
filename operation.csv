@@ -1,0 +1,3 @@
+copy, /sb/sb.txt
+copy, /sb/swh.txt
+command, cat swh.txt
