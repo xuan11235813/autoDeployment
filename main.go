@@ -3,19 +3,23 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
-	"os"
-	"path/filepath"
 
 	"bufio"
+	"io"
+	"log"
 	"net"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tmc/scp"
 	"golang.org/x/crypto/ssh"
 )
 
 type nodeItem struct {
+	nodeIndex string
 	IPaddress string
 	userName  string
 	password  string
@@ -43,6 +47,14 @@ func main() {
 	var nodeOperations []nodeOperationItem
 	var lines []string
 	var nodes []nodeItem
+	/* log file */
+	dt := time.Now().Unix()
+	logFile, err := os.Create("log" + strconv.FormatInt(dt, 10) + ".log")
+	if err != nil {
+		panic("Initialize log file failed.")
+	}
+	defer logFile.Close()
+	/* domain file */
 	local, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		log.Fatal(err)
@@ -83,11 +95,12 @@ func main() {
 
 	for i, v := range lines {
 		nodeString := strings.Split(v, ",")
-		if len(nodeString) == 3 {
+		if len(nodeString) == 4 {
 			var currNodeItem nodeItem
-			currNodeItem.IPaddress = strings.Join(strings.Fields(nodeString[0]), "")
-			currNodeItem.userName = strings.Join(strings.Fields(nodeString[1]), "")
-			currNodeItem.password = strings.Join(strings.Fields(nodeString[2]), "")
+			currNodeItem.nodeIndex = strings.Join(strings.Fields(nodeString[0]), "")
+			currNodeItem.IPaddress = strings.Join(strings.Fields(nodeString[1]), "")
+			currNodeItem.userName = strings.Join(strings.Fields(nodeString[2]), "")
+			currNodeItem.password = strings.Join(strings.Fields(nodeString[3]), "")
 			nodes = append(nodes, currNodeItem)
 		} else {
 			fmt.Printf("wrong input %d, : %s\n", i, v)
@@ -128,7 +141,8 @@ func main() {
 	}
 
 	for _, v := range nodes {
-		fmt.Printf("===============Implement node: %s=============\n", v.IPaddress)
+		fmt.Printf("===============Implement node: %s, node index: %s =============\n", v.IPaddress, v.nodeIndex)
+		fmt.Fprintf(logFile, "===============Implement node: %s, node index: %s =============\n", v.IPaddress, v.nodeIndex)
 		var testOperation bool = true
 
 		for _, opeItem := range nodeOperations {
@@ -136,37 +150,43 @@ func main() {
 				break
 			}
 			fmt.Printf("current operation: %s; with detail: %s\n", opeItem.operationName, opeItem.operationContent)
+			fmt.Fprintf(logFile, "current operation: %s; with detail: %s\n", opeItem.operationName, opeItem.operationContent)
 			switch opeItem.operationName {
 			case "copy":
 				{
 					localFile := local + opeItem.operationContent
-					err := transferFile(v, localFile)
+					err := transferFile(v, localFile, logFile)
 					if err == nil {
 						fmt.Printf("Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
+						fmt.Fprintf(logFile, "Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
 					} else {
 						testOperation = false
 						fmt.Printf("\n")
+						fmt.Fprintf(logFile, "\n")
 					}
 
 				}
 			case "command":
 				{
-					err := directImplement(v, opeItem.operationContent)
+					err := directImplement(v, opeItem.operationContent, logFile)
 					if err == nil {
 						fmt.Printf("Success in node: %s with operation: %s\n", v.IPaddress, opeItem.operationContent)
+						fmt.Fprintf(logFile, "Success in node: %s with operation: %s\n", v.IPaddress, opeItem.operationContent)
 					} else {
 						testOperation = false
 						fmt.Printf("\n")
+						fmt.Fprintf(logFile, "\n")
 					}
 				}
 			}
 
 		}
 		fmt.Printf("\n")
+		fmt.Fprintf(logFile, "\n")
 	}
 
 }
-func directImplement(currNode nodeItem, command string) error {
+func directImplement(currNode nodeItem, command string, printOutput io.Writer) error {
 	sshConfig := &ssh.ClientConfig{
 		User: currNode.userName,
 		Auth: []ssh.AuthMethod{
@@ -179,12 +199,14 @@ func directImplement(currNode nodeItem, command string) error {
 	client, err := ssh.Dial("tcp", currNode.IPaddress+":22", sshConfig)
 	if err != nil {
 		fmt.Printf("Failed to dial: " + err.Error())
+		fmt.Fprintf(printOutput, "Failed to dial: "+err.Error())
 		return err
 	}
 
 	session, err := client.NewSession()
 	if err != nil {
 		fmt.Printf("Failed to create session: " + err.Error())
+		fmt.Fprintf(printOutput, "Failed to create session: "+err.Error())
 		return err
 	}
 	defer session.Close()
@@ -192,10 +214,11 @@ func directImplement(currNode nodeItem, command string) error {
 	var stdoutBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
 	session.Run(command)
-	fmt.Printf(stdoutBuf.String() + "\n")
+	fmt.Printf("Output: " + stdoutBuf.String() + "\n")
+	fmt.Fprintf(printOutput, "Output: "+stdoutBuf.String()+"\n")
 	return nil
 }
-func transferFile(currNode nodeItem, filePath string) error {
+func transferFile(currNode nodeItem, filePath string, printOutput io.Writer) error {
 	sshConfig := &ssh.ClientConfig{
 		User: currNode.userName,
 		Auth: []ssh.AuthMethod{
@@ -208,12 +231,14 @@ func transferFile(currNode nodeItem, filePath string) error {
 	client, err := ssh.Dial("tcp", currNode.IPaddress+":22", sshConfig)
 	if err != nil {
 		fmt.Printf("Failed to dial: " + err.Error())
+		fmt.Fprintf(printOutput, "Failed to dial: "+err.Error())
 		return err
 	}
 
 	session, err := client.NewSession()
 	if err != nil {
 		fmt.Printf("Failed to create session: " + err.Error())
+		fmt.Fprintf(printOutput, "Failed to create session: "+err.Error())
 		return err
 	}
 	defer session.Close()
@@ -222,6 +247,7 @@ func transferFile(currNode nodeItem, filePath string) error {
 	err = scp.CopyPath(filePath, dest, session)
 	if err != nil {
 		fmt.Printf("Transfering file error with the destination: " + err.Error())
+		fmt.Fprintf(printOutput, "Transfering file error with the destination: "+err.Error())
 		return err
 	}
 	return nil

@@ -9,7 +9,7 @@ progFile=temp/$zipName/$fileName
 
 if test -f "$progFile"
 then
-	prog=$(top -n1 | grep -i out | awk '{print $2}')
+	prog=$(top -n6 | grep -i out | awk '{print $2}')
 	if test -z "$prog"
 	then 
 		echo "no such  program"
