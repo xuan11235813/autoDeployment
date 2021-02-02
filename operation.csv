@@ -1,3 +1,3 @@
-copy, /test.sh
+copy, /shell/test.sh
 command, chmod +x test.sh
 command, ./test.sh

@@ -48,8 +48,11 @@ func main() {
 	var lines []string
 	var nodes []nodeItem
 	/* log file */
+	if _, err := os.Stat("log"); os.IsNotExist(err) {
+		os.Mkdir("log", 0700)
+	}
 	dt := time.Now().Unix()
-	logFile, err := os.Create("log" + strconv.FormatInt(dt, 10) + ".log")
+	logFile, err := os.Create("log/log" + strconv.FormatInt(dt, 10) + ".log")
 	if err != nil {
 		panic("Initialize log file failed.")
 	}
