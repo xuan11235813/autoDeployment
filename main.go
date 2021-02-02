@@ -252,6 +252,7 @@ func directImplement(currNode nodeItem, command string, printOutput io.Writer) e
 		fmt.Fprintf(printOutput, "Failed to dial: "+err.Error())
 		return err
 	}
+	defer client.Close()
 
 	session, err := client.NewSession()
 	if err != nil {
@@ -284,6 +285,7 @@ func transferFile(currNode nodeItem, filePath string, destName string, printOutp
 		fmt.Fprintf(printOutput, "Failed to dial: "+err.Error())
 		return err
 	}
+	defer client.Close()
 
 	session, err := client.NewSession()
 	if err != nil {
