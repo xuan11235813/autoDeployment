@@ -1,3 +1,4 @@
 copy, /shell/test.sh
+copyN, /remoteConfig/vec%.config
 command, chmod +x test.sh
 command, ./test.sh

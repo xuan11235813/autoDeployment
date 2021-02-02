@@ -26,11 +26,12 @@ type nodeItem struct {
 }
 
 type nodeOperationItem struct {
-	operationName    string
-	operationContent string
+	operationName           string
+	operationContent        string
+	operationRefinedContent string
 }
 
-var legalOperationName = []string{"copy", "command"}
+var legalOperationName = []string{"copy", "command", "copyN"}
 
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
@@ -39,6 +40,18 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func getRealNameFromPattern(oldString string, index string) string {
+	indexPos := strings.Index(oldString, "%")
+
+	if indexPos > -1 {
+		preName := oldString[:indexPos]
+		afterName := oldString[indexPos+1:]
+		refinedName := preName + index + afterName
+		return refinedName
+	}
+	return oldString
 }
 
 func main() {
@@ -140,9 +153,27 @@ func main() {
 					panic("opps!")
 				}
 			}
+
+			if v.operationName == "copyN" {
+				indexPos := strings.Index(v.operationContent, "%")
+				if indexPos > -1 {
+					preName := v.operationContent[:indexPos]
+					afterName := v.operationContent[indexPos+1:]
+					refinedName := preName + afterName
+					nodeOperations[i].operationRefinedContent = refinedName
+				}
+				for _, currNode := range nodes {
+					realFile := getRealNameFromPattern(v.operationContent, currNode.nodeIndex)
+					localFile := local + realFile
+					if _, err := os.Stat(localFile); os.IsNotExist(err) {
+						fmt.Printf("No file in current path: %s in line %d\n", localFile, i)
+						panic("opps!")
+					}
+				}
+
+			}
 		}
 	}
-
 	for _, v := range nodes {
 		fmt.Printf("===============Implement node: %s, node index: %s =============\n", v.IPaddress, v.nodeIndex)
 		fmt.Fprintf(logFile, "===============Implement node: %s, node index: %s =============\n", v.IPaddress, v.nodeIndex)
@@ -158,7 +189,23 @@ func main() {
 			case "copy":
 				{
 					localFile := local + opeItem.operationContent
-					err := transferFile(v, localFile, logFile)
+					err := transferFile(v, localFile, "", logFile)
+					if err == nil {
+						fmt.Printf("Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
+						fmt.Fprintf(logFile, "Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
+					} else {
+						testOperation = false
+						fmt.Printf("\n")
+						fmt.Fprintf(logFile, "\n")
+					}
+
+				}
+			case "copyN":
+				{
+					realFile := getRealNameFromPattern(opeItem.operationContent, v.nodeIndex)
+					localFile := local + realFile
+					destName := filepath.Base(opeItem.operationRefinedContent)
+					err := transferFile(v, localFile, destName, logFile)
 					if err == nil {
 						fmt.Printf("Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
 						fmt.Fprintf(logFile, "Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
@@ -221,7 +268,7 @@ func directImplement(currNode nodeItem, command string, printOutput io.Writer) e
 	fmt.Fprintf(printOutput, "Output: "+stdoutBuf.String()+"\n")
 	return nil
 }
-func transferFile(currNode nodeItem, filePath string, printOutput io.Writer) error {
+func transferFile(currNode nodeItem, filePath string, destName string, printOutput io.Writer) error {
 	sshConfig := &ssh.ClientConfig{
 		User: currNode.userName,
 		Auth: []ssh.AuthMethod{
@@ -246,7 +293,7 @@ func transferFile(currNode nodeItem, filePath string, printOutput io.Writer) err
 	}
 	defer session.Close()
 
-	dest := "/home/pi/"
+	dest := "/home/pi/" + destName
 	err = scp.CopyPath(filePath, dest, session)
 	if err != nil {
 		fmt.Printf("Transfering file error with the destination: " + err.Error())
