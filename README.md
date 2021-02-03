@@ -23,10 +23,18 @@ Bash files are trivial and as usual
 
 Operation file has three keywords (for now)
 * command, the command that directly implemented via ssh, with syntax(e.g.):
+
+
 **command, touch swh.txt**
 
+
+
 * copy, send a local file to remote node, with syntax(e.g. followings). (Specify the destination will be included later)
+
+
 **copy, /temp/swh.txt**
+
+
 
 * copyN, send a local file with a pattern name. For now only one pattern is supported, a string with a symbol "%" in, and "%" will be substituted by node index. (e.g. our domain file is as below: )
 2,  192.168.233.104,       pi,     raspberry
@@ -35,11 +43,16 @@ Operation file has three keywords (for now)
 5,  192.168.233.107,    pi,     raspberry 
 
 task copyN is used:
+
+
 **copyN, node%.config**
+
+
 Then, node2.config, node3.config, node4.config, node5.config will be found and transfered to corresponding nodes.
 
 ## Execution
 
 Very simple, only one line command
+
 
 **autoDeployment**(built target excutable file) **operation.csv**(operation)
