@@ -38,12 +38,12 @@ Operation file has three keywords (for now)
 
 * copyN, send a local file with a pattern name. For now only one pattern is supported, a string with a symbol "%" in, and "%" will be substituted by node index. (e.g. our domain file is as below: )
 
-
+'''
 2,  192.168.233.104,       pi,     raspberry
 3,  192.168.233.105,    pi, raspberry
 4,  192.168.233.106,     pi,     raspberry
 5,  192.168.233.107,    pi,     raspberry 
-
+'''
 task copyN is used:
 
 
