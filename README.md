@@ -1,7 +1,7 @@
 # Usage of auto deployment
 ## Scenario
 
-* You have several nodes (less than 1000) need to manipulate.
+* You have several nodes (less than 1000) need to be manipulated.
 * The tasks are almost the same. (Transfer/update files, excute bash)
 * Your node has limited performance (In this scenario the nodes considered as iot devices) and no internet access.
 * You can connect your node via ssh and scp (scp should be installed in the node)
