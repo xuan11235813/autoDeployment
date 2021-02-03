@@ -1,0 +1,3 @@
+copy, /checkAndStartTest.sh
+command, chmod +x checkAndStartTest.sh
+command, ./checkAndStartTest.sh

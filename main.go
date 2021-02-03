@@ -60,6 +60,12 @@ func main() {
 	var nodeOperations []nodeOperationItem
 	var lines []string
 	var nodes []nodeItem
+	argsWithProg := os.Args
+	operationFile := "operation.csv"
+	if len(argsWithProg) > 1 {
+		operationFile = argsWithProg[1]
+		fmt.Printf(operationFile + "\n")
+	}
 	/* log file */
 	if _, err := os.Stat("log"); os.IsNotExist(err) {
 		os.Mkdir("log", 0700)
@@ -93,7 +99,7 @@ func main() {
 	}
 	nodeDomainFile.Close()
 
-	localOperationFilePath := local + "/operation.csv"
+	localOperationFilePath := local + "/" + operationFile
 	nodeOperationFile, err := os.Open(localOperationFilePath)
 
 	if err != nil {
@@ -174,6 +180,7 @@ func main() {
 			}
 		}
 	}
+
 	for _, v := range nodes {
 		fmt.Printf("===============Implement node: %s, node index: %s =============\n", v.IPaddress, v.nodeIndex)
 		fmt.Fprintf(logFile, "===============Implement node: %s, node index: %s =============\n", v.IPaddress, v.nodeIndex)

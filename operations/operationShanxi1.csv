@@ -1,0 +1,3 @@
+copy, /checkAndStart.sh
+command, chmod +x checkAndStart.sh
+command, ./checkAndStart.sh

@@ -1,0 +1,5 @@
+copyN, /remoteConfig/%vec.config
+copy, /updateAndRestart.sh
+copy, /outMultipleTemp.lexe
+command, chmod +x updateAndRestart.sh
+command, ./updateAndRestart.sh
