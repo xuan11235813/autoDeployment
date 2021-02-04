@@ -29,9 +29,12 @@ type nodeOperationItem struct {
 	operationName           string
 	operationContent        string
 	operationRefinedContent string
+	operationPrefix         string
+	operationPostfix        string
+	isSubstitute            bool
 }
 
-var legalOperationName = []string{"copy", "command", "copyN"}
+var legalOperationName = []string{"copy", "command", "copyN", "getN"}
 
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
@@ -65,6 +68,10 @@ func main() {
 	if len(argsWithProg) > 1 {
 		operationFile = argsWithProg[1]
 		fmt.Printf(operationFile + "\n")
+	}
+	/* download data files */
+	if _, err := os.Stat("data"); os.IsNotExist(err) {
+		os.Mkdir("data", 0700)
 	}
 	/* log file */
 	if _, err := os.Stat("log"); os.IsNotExist(err) {
@@ -178,6 +185,21 @@ func main() {
 				}
 
 			}
+
+			if v.operationName == "getN" {
+				indexPos := strings.Index(v.operationContent, "%")
+				if indexPos > -1 {
+					preName := v.operationContent[:indexPos]
+					afterName := v.operationContent[indexPos+1:]
+					nodeOperations[i].operationPrefix = preName
+					nodeOperations[i].operationPostfix = afterName
+					nodeOperations[i].isSubstitute = true
+				} else {
+					nodeOperations[i].operationPrefix = ""
+					nodeOperations[i].operationPostfix = v.operationContent
+					nodeOperations[i].isSubstitute = false
+				}
+			}
 		}
 	}
 
@@ -235,8 +257,27 @@ func main() {
 						fmt.Fprintf(logFile, "\n")
 					}
 				}
-			}
+			case "getN":
+				{
+					targetFileName := ""
+					if opeItem.isSubstitute == false {
+						targetFileName = opeItem.operationPrefix + opeItem.operationPostfix
+					} else {
+						targetFileName = opeItem.operationPrefix + v.nodeIndex + opeItem.operationPostfix
+					}
+					localCopyedFileName := local + "/data" + "/r" + v.nodeIndex + filepath.Base(targetFileName)
+					fmt.Printf("targetFile: %s\n localFileName: %s\n", targetFileName, localCopyedFileName)
+					err := downloadFile(v, targetFileName, localCopyedFileName, logFile)
+					if err == nil {
+						fmt.Printf("Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
+						fmt.Fprintf(logFile, "Success in node: %s with operation: %s : %s\n", v.IPaddress, opeItem.operationName, opeItem.operationContent)
+					} else {
+						fmt.Printf("\n")
+						fmt.Fprintf(logFile, "\n")
+					}
 
+				}
+			}
 		}
 		fmt.Printf("\n")
 		fmt.Fprintf(logFile, "\n")
@@ -309,5 +350,56 @@ func transferFile(currNode nodeItem, filePath string, destName string, printOutp
 		fmt.Fprintf(printOutput, "Transfering file error with the destination: "+err.Error())
 		return err
 	}
+	return nil
+}
+
+func downloadFile(currNode nodeItem, remotePath string, destLocalPath string, printOutput io.Writer) error {
+	sshConfig := &ssh.ClientConfig{
+		User: currNode.userName,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(currNode.password),
+		},
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		},
+	}
+	client, err := ssh.Dial("tcp", currNode.IPaddress+":22", sshConfig)
+	if err != nil {
+		fmt.Printf("Failed to dial: " + err.Error())
+		fmt.Fprintf(printOutput, "Failed to dial: "+err.Error())
+		return err
+	}
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		fmt.Printf("Failed to create session: " + err.Error())
+		fmt.Fprintf(printOutput, "Failed to create session: "+err.Error())
+		return err
+	}
+	defer session.Close()
+	r, err := session.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	file, err := os.OpenFile(destLocalPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	cmd := "cat " + remotePath
+	if err := session.Start(cmd); err != nil {
+		return err
+	}
+
+	_, err = io.Copy(file, r)
+	if err != nil {
+		return err
+	}
+
+	if err := session.Wait(); err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -1,0 +1,4 @@
+getN, /home/pi/radarSystemRaw/data/traceM10010%01.csv
+getN, /home/pi/radarSystemRaw/data/traceM10010%02.csv
+getN, /home/pi/radarSystemRaw/data/traceM10010%03.csv
+getN, /home/pi/radarSystemRaw/data/traceM10010%04.csv

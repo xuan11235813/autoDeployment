@@ -56,6 +56,11 @@ task copyN is used:
 
 Then, node2.config, node3.config, node4.config, node5.config will be found and transfered to corresponding nodes.
 
+* getN, get file with a pattern name from remote nodes and save at local
+
+**getN, node%.config**
+
+
 ## Execution
 
 Very simple, only one line command
