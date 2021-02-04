@@ -1,2 +1,6 @@
 *.log
+*.exe
+*.lexe
+*.o
+/operations/*
 /data/*
