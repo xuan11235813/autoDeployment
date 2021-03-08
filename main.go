@@ -140,7 +140,7 @@ func main() {
 	}
 
 	for i, v := range operationLines {
-		operationString := strings.Split(v, ",")
+		operationString := strings.SplitN(v, ",", 2)
 		if len(operationString) == 2 {
 			var currOperationItem nodeOperationItem
 			currOperationItem.operationName = strings.TrimSpace(operationString[0])
@@ -312,9 +312,16 @@ func directImplement(currNode nodeItem, command string, printOutput io.Writer) e
 	/* excute the command */
 	var stdoutBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
-	session.Run(command)
+	err = session.Run(command)
+	if err != nil {
+		fmt.Printf("Failed to excute command: " + err.Error() + "\n")
+		fmt.Fprintf(printOutput, "Failed to excute command: "+err.Error()+"\n")
+		return err
+	}
+
 	fmt.Printf("Output: " + stdoutBuf.String() + "\n")
 	fmt.Fprintf(printOutput, "Output: "+stdoutBuf.String()+"\n")
+
 	return nil
 }
 func transferFile(currNode nodeItem, filePath string, destName string, printOutput io.Writer) error {
@@ -343,7 +350,7 @@ func transferFile(currNode nodeItem, filePath string, destName string, printOutp
 	}
 	defer session.Close()
 
-	dest := "/home/pi/" + destName
+	dest := "/data/" + destName
 	err = scp.CopyPath(filePath, dest, session)
 	if err != nil {
 		fmt.Printf("Transfering file error with the destination: " + err.Error())
