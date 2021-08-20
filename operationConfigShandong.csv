@@ -1,0 +1,5 @@
+copy, /shell/basicConfig.sh
+copyN, /remoteConfig/vec%.config
+command, chmod +x basicConfig.sh
+command, ./makeCanGreatAgain.sh
+command, ./basicConfig.sh

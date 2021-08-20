@@ -1,6 +1,3 @@
-copy, /shell/test.sh
-copy, /sb/sb.txt
-copyN, /remoteConfig/vec%.config
-command, ls
-command, chmod +x test.sh
-command, ./test.sh
+copy, /shell/checkAndStartNoNetworking.sh
+command, chmod +x checkAndStartNoNetworking.sh
+command, ./checkAndStartNoNetworking.sh

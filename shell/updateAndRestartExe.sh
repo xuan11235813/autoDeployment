@@ -1,4 +1,4 @@
-exeDirectory="radarSystemRaw"
+exeDirectory="radarSystem"
 runFileTemp="outMultipleTemp.lexe"
 runFile="outMultiple.lexe"
 # kill all screens

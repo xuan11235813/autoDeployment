@@ -350,7 +350,7 @@ func transferFile(currNode nodeItem, filePath string, destName string, printOutp
 	}
 	defer session.Close()
 
-	dest := "/data/" + destName
+	dest := "/radar/" + destName
 	err = scp.CopyPath(filePath, dest, session)
 	if err != nil {
 		fmt.Printf("Transfering file error with the destination: " + err.Error())
